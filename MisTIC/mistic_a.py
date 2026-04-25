@@ -445,27 +445,31 @@ class mistic_a(nn.Module):
         # [MODIFIED] Drop only the two prior-feature columns we used.
         tx_to_change = self.tx_reassign_info.drop(['prior_exp_feature',
                                                     'prior_neighbor_exp_feature'])
+
+        # Add reassign threshold 
         tx_to_change = tx_to_change.with_columns(pl.lit(reassign_threshold).cast(pl.Float64).alias("reassign_threshold"))
+        # Add removal threshold 
         tx_to_change = tx_to_change.with_columns((pl.col("reassign_threshold")*(1-remove_threshold)).alias("remove_threshold"))
+        # Dichotomize results 
         tx_to_change = tx_to_change.with_columns(pl.when((pl.col('reassign_probs')>pl.col("reassign_threshold"))).then(1).otherwise(0).alias('reassign'))
+        # For not reassigned tx, remove them per threshold 
         tx_to_change = tx_to_change.with_columns(pl.when((pl.col("reassign")==0) & (pl.col('reassign_probs')>pl.col("remove_threshold"))).then(1).otherwise(0).alias('remove'))
+        # Filter reassigned 
         tx_to_reassign = tx_to_change.filter(pl.col("reassign")==1).drop(["reassign", "remove", "reassign_threshold", "remove_threshold"])
         tx_to_remove = tx_to_change.filter(pl.col("remove")==1).drop(["reassign", "remove", "reassign_threshold", "remove_threshold"])
-        
-        tx_to_reassign = tx_to_reassign.rename({"neighbor_cell_id": "to_cell_id"})
-        tx_to_remove = tx_to_remove.rename({"cell_id": "from_cell_id"})
-
-        adata_obs = pl.from_pandas(self.adata.obs[["cell_type"]], include_index=True)
+        # Rename for readability
         tx_to_reassign = tx_to_reassign.join(adata_obs.rename({"cell_type": "from_cell_type"}),
                                                 how='left', left_on='cell_id', right_on="cell_id")
         tx_to_reassign = tx_to_reassign.join(adata_obs.rename({"cell_type": "to_cell_type"}),
-                                                how='left', left_on='to_cell_id', right_on="cell_id")
+                                                how='left', left_on='neighbor_cell_id', right_on="cell_id")
         tx_to_reassign = tx_to_reassign.drop(["cell_type", "neighbor_celltype"])
+        # Filter removed 
         tx_to_remove = tx_to_remove.join(adata_obs.rename({"cell_type": "from_cell_type"}),
-                                                how='left', left_on='from_cell_id', right_on="cell_id")
+                                                how='left', left_on='cell_id', right_on="cell_id")
         tx_to_remove = tx_to_remove.drop(["cell_type", "neighbor_celltype"])
         
         return tx_to_reassign, tx_to_remove
+    
     
     def _find_criteria(self,
                     adata_obs: pl.DataFrame,
