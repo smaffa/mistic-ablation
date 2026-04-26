@@ -58,7 +58,6 @@ if __name__ == "__main__":
     m.patchfy_data()
 
     m.initialize_parameters()
-    exit()
     gc.collect()
     m.training_loop(n_epochs=20)
     gc.collect()
