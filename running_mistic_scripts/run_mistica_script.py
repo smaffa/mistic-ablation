@@ -7,7 +7,7 @@ if __name__ == "__main__":
     import numpy as np
     import os
     import gc
-
+    import pandas as pd
 
     #turn off progress bars to not clog up the logs
     os.environ["TQDM_DISABLE"] = "True"
@@ -16,14 +16,33 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-t", type=str, help="location of transcript csv" )
     parser.add_argument("-o", type=str, help="location of output folder" )
+    parser.add_argument("--c", type=str, default=None, help="location of transcript cell by gene -- for transcript assignment to work, cell by gene must match simulated dataset" )
 
     args = parser.parse_args()
     detected_transcripts = str(args.t)
     output_folder = str(args.o)
-    cell_by_gene_counts = "/home/jholz/mistic_bayesian/HumanLiverCancerPatient1Synth/cell_by_gene_subset_fixed.csv"
+    cell_by_gene_counts = args.c
+    
+    #subset the cell_by_gene counts
+    if(args.c is None):
+        print("Creating a cell by gene matrix that matches the synthetic transcripts")
+        tx_tag = str(args.t).split("/")[-1].split("_")[1]
+        synth_foldr = "/".join(str(args.t).split("/")[0:-1])
+        cell_by_gene_counts = f"{synth_foldr}/cell_by_gene_subset_{tx_tag}.csv"
+        tx_meta = pd.read_csv(detected_transcripts)
+        counts_df = (
+        tx_meta
+        .groupby(['cell_id', 'gene'])
+        .size()
+        .unstack(fill_value=0)
+        )
+        counts_df = counts_df.astype(int)
+        print("saving csv at ", cell_by_gene_counts)
+        counts_df.to_csv(cell_by_gene_counts)
+    #cell_by_gene_counts = "/orcd/compute/edsun/001/jholz/mistic/mistic_bayesian/HumanLiverCancerPatient1Synth/cell_by_gene_subset_fixed.csv"
     #detected_transcripts = '/home/jholz/mistic_bayesian/HumanLiverCancerPatient1Synth/synthetic_datasets/tx05/synthetic_tx05_transcript_meta.csv'
-    cell_metadata = '/home/jholz/mistic_bayesian/HumanLiverCancerPatient1Synth/cell_meta.csv'
-    cell_boundary_polygons = "/home/jholz/mistic_bayesian/HumanLiverCancerPatient1Synth/cell_boundaries_fixed.parquet"
+    cell_metadata = '/orcd/compute/edsun/001/jholz/mistic/mistic_bayesian/HumanLiverCancerPatient1Synth/cell_meta.csv'
+    cell_boundary_polygons = "/orcd/compute/edsun/001/jholz/mistic/mistic_bayesian/HumanLiverCancerPatient1Synth/cell_boundaries_fixed.parquet"
     m = mistic_a(cell_centroid_x_col='center_x',
                     cell_centroid_y_col='center_y',
                     celltype_col="cell_type",
