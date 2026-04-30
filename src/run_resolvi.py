@@ -97,7 +97,7 @@ if __name__ == "__main__":
         assert args.h is not None, "if transcripts and cell metadata are not provided, then an anndata h5ad file must be provided"
         adata = load_h5ad(str(args.h))
 
-    elif args.m is None:
+    elif args.h is None:
         assert args.t is not None and args.m is not None, "if an anndata h5ad file is not provided, then transcript and cell metadata must be provided"
         counts_df, metadata = load_data(str(args.m), str(args.t))
         adata = create_adata_object(counts_df, metadata)
