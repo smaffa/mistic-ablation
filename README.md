@@ -1,5 +1,5 @@
 # mistic-ablation
-Final project for 6.7830, coauthored by JuliaHolz (Julia Holz) and smaffa (Samuel Maffa)
+Final project for 6.7830 Bayesian Modeling and Inference, Spring 2026. Coauthored by JuliaHolz (Julia Holz) and smaffa (Samuel Maffa)
 
 This repository contains all scripts and notebooks used to reproduce some of the results in [Yang et al., 2025](https://doi.org/10.64898/2025.12.11.693759), as well as perform an ablation study on the parameter relating to transcript locations.
 
